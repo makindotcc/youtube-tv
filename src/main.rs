@@ -15,6 +15,19 @@ fn main() -> wry::Result<()> {
     let _webview = WebViewBuilder::new(window)?
         .with_user_agent(&user_agent_string)
         .with_url("https://www.youtube.com/tv#/")?
+        .with_initialization_script(
+            r#"
+			const orgAddEventListener = window.document.addEventListener;
+			function hookedAddEventListener(eventType, ...args) {
+				if (eventType === 'visibilitychange' || eventType === 'webkitvisibilitychange') {
+					console.log(`Prevented youtube from registering ${eventType} event listener`);
+				} else {
+					orgAddEventListener(eventType, ...args);
+				}
+			}
+			window.document.addEventListener = hookedAddEventListener;
+			"#,
+        )
         .build()?;
 
     event_loop.run(move |event, _, control_flow| {
